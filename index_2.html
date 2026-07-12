@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Risk Ladder">
+<title>Risk Ladder — Prop Accounts</title>
+<style>
+:root{
+  --bg:#0a0d12;
+  --panel:#12161d;
+  --panel2:#171c25;
+  --line:#232a36;
+  --text:#e8ebf0;
+  --muted:#7c8798;
+  --mono:'SF Mono',ui-monospace,Menlo,Consolas,monospace;
+  --sans:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --red:#e5484d;
+  --red-dim:#3a1e20;
+  --green:#3ecf8e;
+  --green-dim:#153126;
+  --amber:#f5a623;
+  --amber-dim:#332510;
+  --blue:#4d9ee5;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:var(--sans); padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom) 0;
+  min-height:100vh;
+}
+.wrap{max-width:640px; margin:0 auto; padding:20px 16px 60px;}
+header{padding:8px 0 20px;}
+header .eyebrow{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted);}
+header h1{font-size:22px; margin:4px 0 2px; font-weight:700; letter-spacing:-.01em;}
+header .sub{font-size:13px; color:var(--muted);}
+
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:14px;
+  margin-bottom:14px; overflow:hidden;
+}
+.card-head{
+  display:flex; align-items:center; justify-content:space-between;
+  padding:14px 16px; border-bottom:1px solid var(--line);
+}
+.card-head .name{font-weight:700; font-size:15px;}
+.card-head .tag{
+  font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase;
+  padding:3px 8px; border-radius:20px; font-weight:600;
+}
+.tag-def{background:var(--red-dim); color:var(--red);}
+.tag-off{background:var(--green-dim); color:var(--green);}
+.tag-neu{background:var(--amber-dim); color:var(--amber);}
+
+.card-body{padding:14px 16px 16px;}
+.row{display:flex; gap:10px; margin-bottom:10px;}
+.field{flex:1;}
+.field label{display:block; font-size:11px; color:var(--muted); margin-bottom:4px; font-family:var(--mono);}
+.field input{
+  width:100%; background:var(--panel2); border:1px solid var(--line); color:var(--text);
+  border-radius:9px; padding:10px 10px; font-size:15px; font-family:var(--mono);
+  -moz-appearance:textfield;
+}
+.field input::-webkit-outer-spin-button,.field input::-webkit-inner-spin-button{margin:0;}
+.field input:focus{outline:none; border-color:var(--blue);}
+
+.result{
+  margin-top:12px; padding:12px 14px; border-radius:10px; background:var(--panel2);
+  border:1px solid var(--line);
+}
+.result .r1{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px;}
+.result .r1 .lbl{font-size:12px; color:var(--muted);}
+.result .r1 .buf{font-family:var(--mono); font-size:13px; font-weight:600;}
+.tierbar{height:6px; border-radius:4px; background:var(--line); overflow:hidden; margin-bottom:10px;}
+.tierbar .fill{height:100%; border-radius:4px;}
+.risk-out{display:flex; justify-content:space-between; align-items:center;}
+.risk-out .risk-pct{font-family:var(--mono); font-size:24px; font-weight:700;}
+.risk-out .risk-usd{font-family:var(--mono); font-size:13px; color:var(--muted);}
+.warn{
+  margin-top:10px; padding:9px 11px; border-radius:8px; font-size:12.5px; line-height:1.4;
+  display:flex; gap:8px; align-items:flex-start;
+}
+.warn-crit{background:var(--red-dim); color:#ff9d9f; border:1px solid #4a2226;}
+.warn-info{background:var(--amber-dim); color:#f7c877; border:1px solid #4a3714;}
+
+.toggle-row{display:flex; align-items:center; gap:8px; margin-bottom:10px; font-size:12px; color:var(--muted);}
+.toggle-row input{width:16px; height:16px;}
+
+footer.actions{display:flex; gap:10px; margin-top:6px;}
+button{
+  flex:1; padding:13px; border-radius:11px; border:none; font-size:14px; font-weight:600;
+  font-family:var(--sans); cursor:pointer;
+}
+.btn-primary{background:var(--blue); color:#06121f;}
+.btn-ghost{background:var(--panel2); color:var(--muted); border:1px solid var(--line);}
+
+.hist{margin-top:18px;}
+.hist h2{font-size:13px; color:var(--muted); font-family:var(--mono); letter-spacing:.06em; text-transform:uppercase; margin-bottom:8px;}
+.hist-entry{
+  display:flex; justify-content:space-between; padding:9px 12px; background:var(--panel);
+  border:1px solid var(--line); border-radius:9px; margin-bottom:6px; font-size:12.5px;
+}
+.hist-entry .d{color:var(--muted); font-family:var(--mono);}
+.empty{color:var(--muted); font-size:12.5px; text-align:center; padding:16px 0;}
+
+.legend{font-size:11px; color:var(--muted); line-height:1.6; padding:12px 4px 0;}
+
+.pair-row{display:flex; gap:8px; align-items:center; margin-bottom:8px;}
+.pair-row input.pairName{flex:1.4; background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:9px; padding:9px 10px; font-size:13.5px; font-family:var(--mono);}
+.pair-row select{flex:0.8; background:var(--panel2); border:1px solid var(--line); color:var(--text); border-radius:9px; padding:9px 6px; font-size:13.5px; font-family:var(--mono);}
+.pair-row .rmBtn{background:none; border:none; color:var(--muted); font-size:18px; flex:0 0 26px; padding:0; cursor:pointer;}
+
+.alloc-acct{margin-bottom:16px;}
+.alloc-acct:last-child{margin-bottom:0;}
+.alloc-acct h3{font-size:12px; font-family:var(--mono); color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin:0 0 8px;}
+.alloc-row{display:flex; justify-content:space-between; align-items:center; padding:8px 10px; background:var(--panel2); border:1px solid var(--line); border-radius:9px; margin-bottom:6px;}
+.alloc-row .p-name{font-family:var(--mono); font-size:13px; font-weight:600;}
+.alloc-row .p-stars{font-size:10px; color:var(--muted); margin-left:6px;}
+.alloc-row .p-flag{font-size:10px; color:var(--amber); margin-left:6px;}
+.alloc-row .p-risk{font-family:var(--mono); font-size:13.5px; font-weight:700; text-align:right;}
+.alloc-row .p-risk .usd{display:block; font-size:10.5px; color:var(--muted); font-weight:400;}
+.currency-note{font-size:11px; color:var(--muted); margin-bottom:10px; padding:8px 10px; background:var(--panel); border-radius:8px; border:1px dashed var(--line);}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Prop Firm · Money Management</div>
+    <h1>Risk Ladder</h1>
+    <div class="sub">Carrega os saldos de hoje → risco calculado para amanhã</div>
+  </header>
+
+  <div id="cards"></div>
+
+  <div class="card" id="weekCard">
+    <div class="card-head">
+      <div class="name">Pares Activos — Semana</div>
+      <div class="tag" style="background:var(--panel2); color:var(--blue); border:1px solid var(--line)">Matrix + Commodities</div>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="field">
+          <label>Semana (ex: W29)</label>
+          <input type="text" id="weekLabel" placeholder="W29">
+        </div>
+        <div class="field">
+          <label>Gold score</label>
+          <input type="number" inputmode="decimal" id="goldScore" placeholder="-3">
+        </div>
+        <div class="field">
+          <label>Crude score</label>
+          <input type="number" inputmode="decimal" id="crudeScore" placeholder="-3">
+        </div>
+      </div>
+      <div id="pairsList"></div>
+      <button class="btn-ghost" id="addPairBtn" style="width:100%; margin-top:4px;">+ Adicionar par</button>
+    </div>
+  </div>
+
+  <div class="card" id="allocCard" style="display:none;">
+    <div class="card-head">
+      <div class="name">Alocação por Par (cap de moeda aplicado)</div>
+    </div>
+    <div class="card-body" id="allocBody"></div>
+  </div>
+
+  <footer class="actions">
+    <button class="btn-ghost" id="resetBtn">Limpar hoje</button>
+    <button class="btn-primary" id="saveBtn">Guardar dia</button>
+  </footer>
+
+  <div class="hist">
+    <h2>Histórico</h2>
+    <div id="histList"></div>
+  </div>
+
+  <div class="legend">
+    Buffer &gt;80% → risco cheio · 60–80% → 75% · 40–60% → 50% · 20–40% → 25% · &lt;20% → stop trading.<br>
+    City: trailing DD, tier extra abaixo após novo máximo histórico. Alpha: DD estático.
+  </div>
+</div>
+
+<script>
+const CONFIG = {
+  city: {
+    key:'city', name:'City Traders Imperium', tagClass:'tag-def', tagLabel:'Defensivo',
+    ddType:'trailing', maxDD:5000, dailyMax:5000, cap:0.4, accent:'var(--red)'
+  },
+  alphaOff: {
+    key:'alphaOff', name:'Alpha Capital #1717155', tagClass:'tag-off', tagLabel:'Ofensivo',
+    ddType:'static', maxDD:10000, dailyMax:5000, cap:1.5, accent:'var(--green)'
+  },
+  alphaNeu: {
+    key:'alphaNeu', name:'Alpha Capital #1581733', tagClass:'tag-neu', tagLabel:'Neutro',
+    ddType:'static', maxDD:10000, dailyMax:5250, cap:1.0, accent:'var(--amber)'
+  }
+};
+
+const DEFAULT_PAIRS = [
+  {pair:'AUD/CHF', stars:5},
+  {pair:'USD/CHF', stars:4},
+  {pair:'GBP/CHF', stars:4},
+  {pair:'AUD/CAD', stars:4},
+  {pair:'USD/CAD', stars:3}
+];
+
+let state = { accounts:{}, history:[], week:{ label:'', gold:'', crude:'' }, pairs:null };
+
+function load(){
+  try{
+    const raw = localStorage.getItem('riskLadderState');
+    if(raw) state = JSON.parse(raw);
+  }catch(e){ /* localStorage unavailable in this preview — using in-memory state only */ }
+  for(const k of Object.keys(CONFIG)){
+    if(!state.accounts[k]) state.accounts[k] = { balance:'', lossUsed:'', dailyLossUsed:'', highestBalance:'' };
+  }
+  if(!state.history) state.history = [];
+  if(!state.week) state.week = { label:'', gold:'', crude:'' };
+  if(!state.pairs) state.pairs = JSON.parse(JSON.stringify(DEFAULT_PAIRS));
+}
+function persist(){
+  try{ localStorage.setItem('riskLadderState', JSON.stringify(state)); }catch(e){}
+}
+
+function tierFor(bufferPct){
+  if(bufferPct > 80) return {mult:1.0, label:'>80%'};
+  if(bufferPct > 60) return {mult:0.75, label:'60–80%'};
+  if(bufferPct > 40) return {mult:0.5, label:'40–60%'};
+  if(bufferPct > 20) return {mult:0.25, label:'20–40%'};
+  return {mult:0, label:'<20%'};
+}
+
+function compute(cfg, v){
+  const balance = parseFloat(v.balance)||0;
+  const lossUsed = parseFloat(v.lossUsed)||0;
+  const dailyLossUsed = parseFloat(v.dailyLossUsed)||0;
+  const highest = parseFloat(v.highestBalance)|| balance;
+
+  let bufferAbs, newMaxToday = false;
+  if(cfg.ddType === 'trailing'){
+    // stop-out floor rises with highest historical balance
+    const stopOutLevel = highest - cfg.maxDD;
+    bufferAbs = balance - stopOutLevel;
+    newMaxToday = balance >= highest && balance > 0;
+  } else {
+    bufferAbs = cfg.maxDD - lossUsed;
+  }
+  const bufferPct = cfg.maxDD > 0 ? (bufferAbs / cfg.maxDD) * 100 : 0;
+
+  let tier = tierFor(bufferPct);
+  // City: one extra tier down the day after a new high (approximate: if balance == highest, treat as fresh max -> extra caution)
+  let extraTierNote = false;
+  if(cfg.ddType === 'trailing' && newMaxToday){
+    const tiers = [1.0,0.75,0.5,0.25,0];
+    const idx = tiers.indexOf(tier.mult);
+    if(idx >= 0 && idx < tiers.length-1){ tier = {mult:tiers[idx+1], label:tier.label+' (novo máx.)'}; extraTierNote = true; }
+  }
+
+  const riskFromBuffer = cfg.cap * tier.mult;
+
+  const dailyBufferAbs = cfg.dailyMax - dailyLossUsed;
+  const dailyBufferPct = cfg.dailyMax>0 ? Math.max(0,(dailyBufferAbs/cfg.dailyMax))*100 : 100;
+  const riskFromDaily = cfg.cap * (tierFor(dailyBufferPct).mult || 0);
+
+  const finalRiskPct = Math.max(0, Math.min(riskFromBuffer, dailyLossUsed>0 ? riskFromDaily : riskFromBuffer));
+  const riskUsd = balance * (finalRiskPct/100);
+
+  return { bufferPct, tier, finalRiskPct, riskUsd, extraTierNote, bufferAbs };
+}
+
+function fmtUsd(n){ return '$'+ (n||0).toLocaleString('en-US',{maximumFractionDigits:0}); }
+
+function currenciesOf(pairStr){
+  const parts = (pairStr||'').toUpperCase().replace(/\s/g,'').split('/');
+  if(parts.length !== 2) return null;
+  return parts;
+}
+
+// For a given account base risk %, distribute risk across this week's active pairs
+// respecting a per-currency exposure cap of 1.5x base risk, prioritizing higher-star pairs.
+function allocateForAccount(baseRiskPct, pairs){
+  const validPairs = pairs.map((p,i)=>({...p, idx:i, ccys:currenciesOf(p.pair)})).filter(p=>p.ccys);
+  const byCurrency = {};
+  validPairs.forEach(p=>{
+    p.ccys.forEach(c=>{
+      if(!byCurrency[c]) byCurrency[c] = [];
+      byCurrency[c].push(p.idx);
+    });
+  });
+
+  const perPairAlloc = {}; // idx -> array of constraint values, take min
+  validPairs.forEach(p=> perPairAlloc[p.idx] = []);
+
+  Object.keys(byCurrency).forEach(ccy=>{
+    const idxs = byCurrency[ccy];
+    if(idxs.length <= 1){
+      idxs.forEach(idx=> perPairAlloc[idx].push(baseRiskPct));
+      return;
+    }
+    // conflict: cap = 1.5x base, distribute prioritized by stars desc
+    const cap = baseRiskPct * 1.5;
+    const sorted = idxs.slice().sort((a,b)=> (validPairs.find(p=>p.idx===b).stars) - (validPairs.find(p=>p.idx===a).stars));
+    let remaining = cap;
+    sorted.forEach(idx=>{
+      const alloc = Math.max(0, Math.min(baseRiskPct, remaining));
+      remaining -= alloc;
+      perPairAlloc[idx].push(alloc);
+    });
+  });
+
+  const result = {};
+  validPairs.forEach(p=>{
+    const constraints = perPairAlloc[p.idx];
+    result[p.idx] = constraints.length ? Math.min(...constraints) : baseRiskPct;
+  });
+
+  // flag which currencies have correlation conflict (>1 pair)
+  const conflictCcys = Object.keys(byCurrency).filter(c=>byCurrency[c].length>1);
+  return { perPair: result, conflictCcys };
+}
+
+function render(){
+  const container = document.getElementById('cards');
+  container.innerHTML = '';
+  for(const key of Object.keys(CONFIG)){
+    const cfg = CONFIG[key];
+    const v = state.accounts[key];
+    const r = compute(cfg, v);
+
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.borderLeft = `3px solid ${cfg.accent}`;
+
+    const barColor = r.finalRiskPct<=0 ? 'var(--red)' : (cfg.tagLabel==='Defensivo'?'var(--red)':cfg.tagLabel==='Neutro'?'var(--amber)':'var(--green)');
+
+    card.innerHTML = `
+      <div class="card-head">
+        <div class="name">${cfg.name}</div>
+        <div class="tag ${cfg.tagClass}">${cfg.tagLabel} · ${cfg.ddType==='trailing'?'Trailing':'Estático'}</div>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="field">
+            <label>Saldo actual</label>
+            <input type="number" inputmode="decimal" placeholder="101285.94" data-key="${key}" data-field="balance" value="${v.balance}">
+          </div>
+          ${cfg.ddType==='trailing' ? `
+          <div class="field">
+            <label>Highest balance</label>
+            <input type="number" inputmode="decimal" placeholder="105227.30" data-key="${key}" data-field="highestBalance" value="${v.highestBalance}">
+          </div>` : `
+          <div class="field">
+            <label>Loss usado (Max Loss)</label>
+            <input type="number" inputmode="decimal" placeholder="434.97" data-key="${key}" data-field="lossUsed" value="${v.lossUsed}">
+          </div>`}
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Daily loss usado (hoje)</label>
+            <input type="number" inputmode="decimal" placeholder="0" data-key="${key}" data-field="dailyLossUsed" value="${v.dailyLossUsed}">
+          </div>
+        </div>
+
+        <div class="result">
+          <div class="r1"><span class="lbl">Buffer restante</span><span class="buf">${r.bufferPct.toFixed(1)}% · ${fmtUsd(r.bufferAbs)}</span></div>
+          <div class="tierbar"><div class="fill" style="width:${Math.max(0,Math.min(100,r.bufferPct))}%; background:${barColor}"></div></div>
+          <div class="risk-out">
+            <div class="risk-pct" style="color:${barColor}">${r.finalRiskPct.toFixed(2)}%</div>
+            <div class="risk-usd">${fmtUsd(r.riskUsd)} / trade</div>
+          </div>
+          ${r.finalRiskPct<=0 ? `<div class="warn warn-crit">⚠ Buffer &lt;20% — stop trading nesta conta até recuperar.</div>` : ''}
+          ${r.extraTierNote ? `<div class="warn warn-info">Novo máximo histórico — tier reduzido um nível extra (trailing stop-out subiu).</div>` : ''}
+        </div>
+      </div>
+    `;
+    container.appendChild(card);
+  }
+
+  container.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('input', e=>{
+      const {key, field} = e.target.dataset;
+      state.accounts[key][field] = e.target.value;
+      persist();
+      render();
+      restoreFocus(key, field, e.target.selectionStart);
+    });
+  });
+
+  renderHistory();
+  renderWeekCard();
+  renderAllocation();
+}
+
+let focusTarget = null;
+function restoreFocus(key, field, pos){
+  requestAnimationFrame(()=>{
+    const el = document.querySelector(`input[data-key="${key}"][data-field="${field}"]`);
+    if(el){ el.focus(); try{el.setSelectionRange(pos,pos);}catch(e){} }
+  });
+}
+
+function renderHistory(){
+  const list = document.getElementById('histList');
+  if(!state.history.length){ list.innerHTML = '<div class="empty">Sem registos ainda.</div>'; return; }
+  list.innerHTML = state.history.slice().reverse().slice(0,14).map(h=>`
+    <div class="hist-entry">
+      <span class="d">${h.date}</span>
+      <span>City ${h.city}% · Off ${h.alphaOff}% · Neu ${h.alphaNeu}%</span>
+    </div>
+  `).join('');
+}
+
+document.getElementById('saveBtn').addEventListener('click', ()=>{
+  const entry = { date: new Date().toISOString().slice(0,10), accounts: JSON.parse(JSON.stringify(state.accounts)) };
+  for(const key of Object.keys(CONFIG)){
+    const r = compute(CONFIG[key], state.accounts[key]);
+    entry[key] = r.finalRiskPct.toFixed(2);
+  }
+  state.history.push(entry);
+  persist();
+  renderHistory();
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  for(const k of Object.keys(CONFIG)){
+    state.accounts[k] = { balance:'', lossUsed:'', dailyLossUsed:'', highestBalance:'' };
+  }
+  persist();
+  render();
+});
+
+function renderWeekCard(){
+  document.getElementById('weekLabel').value = state.week.label || '';
+  document.getElementById('goldScore').value = state.week.gold || '';
+  document.getElementById('crudeScore').value = state.week.crude || '';
+
+  const list = document.getElementById('pairsList');
+  list.innerHTML = state.pairs.map((p,i)=>`
+    <div class="pair-row">
+      <input class="pairName" data-idx="${i}" data-field="pair" value="${p.pair}" placeholder="AUD/CHF">
+      <select data-idx="${i}" data-field="stars">
+        ${[5,4,3,2,1].map(s=>`<option value="${s}" ${p.stars==s?'selected':''}>${s}★</option>`).join('')}
+      </select>
+      <button class="rmBtn" data-idx="${i}">×</button>
+    </div>
+  `).join('');
+}
+
+function renderAllocation(){
+  const card = document.getElementById('allocCard');
+  const body = document.getElementById('allocBody');
+  const validPairs = state.pairs.filter(p=>currenciesOf(p.pair));
+  if(!validPairs.length){ card.style.display='none'; return; }
+  card.style.display='block';
+
+  const gold = parseFloat(state.week.gold);
+  const crude = parseFloat(state.week.crude);
+
+  let html = '';
+  for(const key of Object.keys(CONFIG)){
+    const cfg = CONFIG[key];
+    const r = compute(cfg, state.accounts[key]);
+    const baseRisk = r.finalRiskPct;
+    const balance = parseFloat(state.accounts[key].balance)||0;
+    const {perPair, conflictCcys} = allocateForAccount(baseRisk, state.pairs);
+
+    let noteHtml = '';
+    if(conflictCcys.length){
+      noteHtml = `<div class="currency-note">⚠ Exposição correlacionada: ${conflictCcys.join(', ')} — cap 1.5× risco base aplicado, prioridade às ★ mais altas.</div>`;
+    }
+
+    const rowsHtml = state.pairs.map((p,i)=>{
+      if(!currenciesOf(p.pair)) return '';
+      const risk = perPair[i] ?? baseRisk;
+      const ccys = currenciesOf(p.pair);
+      let flag = '';
+      if(ccys.includes('CAD') && !isNaN(crude) && crude < 0) flag += ' 🛢';
+      if(ccys.includes('AUD') && !isNaN(gold) && gold < 0) flag += ' 🥇';
+      return `
+        <div class="alloc-row">
+          <div>
+            <span class="p-name">${p.pair}</span>
+            <span class="p-stars">${p.stars}★</span>
+            ${flag ? `<span class="p-flag">${flag}</span>` : ''}
+          </div>
+          <div class="p-risk">${risk.toFixed(2)}%<span class="usd">${fmtUsd(balance*risk/100)}</span></div>
+        </div>`;
+    }).join('');
+
+    html += `<div class="alloc-acct"><h3>${cfg.name}</h3>${noteHtml}${rowsHtml}</div>`;
+  }
+  body.innerHTML = html;
+}
+
+document.getElementById('weekLabel').addEventListener('input', e=>{ state.week.label = e.target.value; persist(); });
+document.getElementById('goldScore').addEventListener('input', e=>{ state.week.gold = e.target.value; persist(); renderAllocation(); });
+document.getElementById('crudeScore').addEventListener('input', e=>{ state.week.crude = e.target.value; persist(); renderAllocation(); });
+document.getElementById('addPairBtn').addEventListener('click', ()=>{
+  state.pairs.push({pair:'', stars:3});
+  persist(); renderWeekCard(); renderAllocation();
+});
+
+document.getElementById('pairsList').addEventListener('input', e=>{
+  const idx = e.target.dataset.idx, field = e.target.dataset.field;
+  if(idx===undefined) return;
+  state.pairs[idx][field] = field==='stars' ? parseInt(e.target.value) : e.target.value;
+  persist(); renderAllocation();
+});
+document.getElementById('pairsList').addEventListener('click', e=>{
+  if(e.target.classList.contains('rmBtn')){
+    state.pairs.splice(parseInt(e.target.dataset.idx),1);
+    persist(); renderWeekCard(); renderAllocation();
+  }
+});
+
+load();
+render();
+</script>
+</body>
+</html>
