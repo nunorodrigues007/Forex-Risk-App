@@ -157,6 +157,7 @@ button{
       </div>
       <div id="pairsList"></div>
       <button class="btn-ghost" id="addPairBtn" style="width:100%; margin-top:4px;">+ Adicionar par</button>
+      <div class="legend" style="padding-top:10px; margin-top:4px; border-top:1px dashed var(--line);">Estes valores vêm do <code>WEEK_CONFIG</code> no código — edições aqui são só para o dia de hoje. Para sincronizar entre dispositivos, actualiza o <code>WEEK_CONFIG</code> no GitHub e deixa o Vercel fazer redeploy.</div>
     </div>
   </div>
 
@@ -199,27 +200,44 @@ const CONFIG = {
   }
 };
 
-const DEFAULT_PAIRS = [
-  {pair:'AUD/CHF', stars:5},
-  {pair:'USD/CHF', stars:4},
-  {pair:'GBP/CHF', stars:4},
-  {pair:'AUD/CAD', stars:4},
-  {pair:'USD/CAD', stars:3}
-];
+// ============================================================
+// WEEK_CONFIG — actualizar isto manualmente todas as semanas
+// (colar os dados do Forex Macro Matrix + Commodity Sunday Brief),
+// fazer commit no GitHub → Vercel faz redeploy automático →
+// todos os dispositivos (iPhone/laptop/PC) ficam sincronizados.
+// ============================================================
+const WEEK_CONFIG = {
+  label: 'W30',
+  gold: -1,
+  crude: -3,
+  pairs: [
+    {pair:'AUD/CHF', stars:5},
+    {pair:'USD/CHF', stars:4},
+    {pair:'GBP/CHF', stars:4},
+    {pair:'AUD/CAD', stars:4},
+    {pair:'USD/CAD', stars:3}
+  ]
+};
 
 let state = { accounts:{}, history:[], week:{ label:'', gold:'', crude:'' }, pairs:null };
 
 function load(){
   try{
     const raw = localStorage.getItem('riskLadderState');
-    if(raw) state = JSON.parse(raw);
+    if(raw){
+      const saved = JSON.parse(raw);
+      // accounts + history persist per-device; week/pairs always come from WEEK_CONFIG (synced via git)
+      if(saved.accounts) state.accounts = saved.accounts;
+      if(saved.history) state.history = saved.history;
+    }
   }catch(e){ /* localStorage unavailable in this preview — using in-memory state only */ }
   for(const k of Object.keys(CONFIG)){
     if(!state.accounts[k]) state.accounts[k] = { balance:'', lossUsed:'', dailyLossUsed:'', highestBalance:'' };
   }
   if(!state.history) state.history = [];
-  if(!state.week) state.week = { label:'', gold:'', crude:'' };
-  if(!state.pairs) state.pairs = JSON.parse(JSON.stringify(DEFAULT_PAIRS));
+  // week/pairs always reset from the hardcoded WEEK_CONFIG — this is the synced source of truth
+  state.week = { label: WEEK_CONFIG.label, gold: WEEK_CONFIG.gold, crude: WEEK_CONFIG.crude };
+  state.pairs = JSON.parse(JSON.stringify(WEEK_CONFIG.pairs));
 }
 function persist(){
   try{ localStorage.setItem('riskLadderState', JSON.stringify(state)); }catch(e){}
