@@ -65,6 +65,7 @@ header .sub{font-size:13px; color:var(--muted);}
 }
 .field input::-webkit-outer-spin-button,.field input::-webkit-inner-spin-button{margin:0;}
 .field input:focus{outline:none; border-color:var(--blue);}
+.field input::placeholder{color:#3d4552; font-style:italic;}
 
 .result{
   margin-top:12px; padding:12px 14px; border-radius:10px; background:var(--panel2);
@@ -391,6 +392,7 @@ function render(){
           </div>
           ${r.finalRiskPct<=0 ? `<div class="warn warn-crit">⚠ Buffer &lt;20% — stop trading nesta conta até recuperar.</div>` : ''}
           ${r.extraTierNote ? `<div class="warn warn-info">Novo máximo histórico — tier reduzido um nível extra (trailing stop-out subiu).</div>` : ''}
+          ${cfg.ddType==='trailing' && !v.highestBalance ? `<div class="warn warn-crit">⚠ Campo "Highest balance" está vazio — o cálculo está a assumir Highest = Saldo actual, o que pode estar errado. Preenche o valor real.</div>` : ''}
         </div>
       </div>
     `;
